@@ -1,4 +1,4 @@
-name := "spark-2"
+name := "spark-2-streaming"
  
 version := "1.0"
 
@@ -34,7 +34,8 @@ lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-sql" % sparkVersion,
   "org.apache.spark" %% "spark-hive" % sparkVersion,
-  "com.datastax.spark" %% "spark-cassandra-connector" % connectorVersion
+  "org.apache.spark" %% "spark-streaming-kinesis-asl" % sparkVersion,
+  "com.datastax.spark" %% "spark-cassandra-connector" % connectorVersion // assumes running in DSE change if OSS
 )
 
 lazy val jdbcDependencies = Seq(
