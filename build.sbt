@@ -27,19 +27,19 @@ javaOptions in run ++= Seq(
 // https://github.com/JetBrains/intellij-scala/wiki/%5BSBT%5D-How-to-use-provided-libraries-in-run-configurations
 lazy val intellijRunner = project.in(file("intellijRunner")).dependsOn(RootProject(file("."))).settings(
   scalaVersion := "2.11.8",
-  libraryDependencies ++= sparkDependencies.map(_ % "compile") ++ jdbcDependencies
+  libraryDependencies ++= sparkDependencies.map(_ % "compile") ++ otherDependencies
 ).disablePlugins(sbtassembly.AssemblyPlugin)
 
 lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-sql" % sparkVersion,
   "org.apache.spark" %% "spark-hive" % sparkVersion,
-  "org.apache.spark" %% "spark-streaming-kinesis-asl" % sparkVersion,
-  "com.datastax.spark" %% "spark-cassandra-connector" % connectorVersion // assumes running in DSE change if OSS
+  "com.datastax.spark" %% "spark-cassandra-connector" % connectorVersion // assumes running in DSE; move to `otherDependencies` if OSS
 )
 
-lazy val jdbcDependencies = Seq(
-  "mysql" % "mysql-connector-java" % "5.1.12"
+lazy val otherDependencies = Seq(
+  "mysql" % "mysql-connector-java" % "5.1.12",
+  "org.apache.spark" %% "spark-streaming-kinesis-asl" % sparkVersion
 )
 
-libraryDependencies ++= sparkDependencies.map(_ % "provided") ++ jdbcDependencies // for assembly plugin - see project/assembly.sbt
+libraryDependencies ++= sparkDependencies.map(_ % "provided") ++ otherDependencies // for assembly plugin - see project/assembly.sbt
