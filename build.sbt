@@ -18,7 +18,7 @@ scalaVersion := "2.11.8"
 // https://github.com/sbt/sbt-assembly#-provided-configuration
 run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
 
-//fork in run := true
+fork in run := true
 javaOptions in run ++= Seq(
   "-Dlog4j.debug=true",
   "-Dlog4j.configuration=log4j.properties")
@@ -38,6 +38,7 @@ lazy val sparkDependencies = Seq(
 )
 
 lazy val otherDependencies = Seq(
+  "com.typesafe" % "config" % "1.3.1",
   "mysql" % "mysql-connector-java" % "5.1.12",
   "org.apache.spark" %% "spark-streaming-kinesis-asl" % sparkVersion
 )

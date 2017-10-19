@@ -1,19 +1,21 @@
 package com.supergloo
 
-import com.amazonaws.auth.{BasicAWSCredentials, DefaultAWSCredentialsProviderChain}
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.regions.RegionUtils
 import com.amazonaws.services.kinesis.AmazonKinesisClient
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
 import com.supergloo.util.Logging
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.streaming.{Milliseconds, StreamingContext}
-import org.apache.spark.streaming.dstream.DStream.toPairDStreamFunctions
+import org.apache.spark.streaming.dstream.DStream
+import org.apache.spark.streaming.{Milliseconds, Minutes, Seconds, StreamingContext}
 import org.apache.spark.streaming.kinesis.KinesisUtils
 
 /**
-  * // TODO
-  * See http://www.supergloo.com/fieldnotes
+  * For more information and context
+  * @see <a href="https://www.supergloo.com/fieldnotes/spark-kinesis-example/">https://www.supergloo.com/fieldnotes/spark-kinesis-example/</a>
   */
 object SparkKinesisExample extends Logging {
 
@@ -22,27 +24,12 @@ object SparkKinesisExample extends Logging {
     val conf = new SparkConf().setAppName("Kinesis Read Sensor Data")
     conf.setIfMissing("spark.master", "local[*]")
 
-//    // Check that all required args were passed in.
-//    if (args.length != 3) {
-//      System.err.println(
-//        """
-//          |Usage: KinesisWordCountASL <app-name> <stream-name> <endpoint-url> <region-name>
-//          |
-//          |    <app-name> is the name of the consumer app, used to track the read data in DynamoDB
-//          |    <stream-name> is the name of the Kinesis stream
-//          |    <endpoint-url> is the endpoint of the Kinesis service
-//          |                   (e.g. https://kinesis.us-east-1.amazonaws.com)
-//          |
-//          |Generate input data for Kinesis stream using the example KinesisWordProducerASL.
-//          |See http://spark.apache.org/docs/latest/streaming-kinesis-integration.html for more
-//          |details.
-//        """.stripMargin)
-//      System.exit(1)
-//    }
+    // Typesafe config - load external config from src/main/resources/application.conf
+    val kinesisConf = ConfigFactory.load.getConfig("kinesis")
 
- //   StreamingExamples.setStreamingLogLevels()
-    //TODO - typesafe config rather than command
-    val Array(appName, streamName, endpointUrl) = args
+    val appName = kinesisConf.getString("appName")
+    val streamName = kinesisConf.getString("streamName")
+    val endpointUrl = kinesisConf.getString("endpointUrl")
 
     val credentials = new DefaultAWSCredentialsProviderChain().getCredentials()
     require(credentials != null,
@@ -69,32 +56,40 @@ object SparkKinesisExample extends Logging {
         InitialPositionInStream.LATEST, kinesisCheckpointInterval, StorageLevel.MEMORY_AND_DISK_2)
     }
 
-    // Union all the streams
+    // Union all the streams (in case numStreams > 1)
     val unionStreams = ssc.union(kinesisStreams)
 
-    // Convert each line of Array[Byte] to String, and split into words
-
-    val words = unionStreams.map { byteArray =>
+    val sensorData = unionStreams.map { byteArray =>
       val Array(sensorId, temp, status) = new String(byteArray).split(",")
-      SensorData(sensorId, temp, status)
+      SensorData(sensorId, temp.toInt, status)
     }
 
-    // TODO - save raw data to cassandra
+    val hotSensors: DStream[SensorData] = sensorData.filter(_.currentTemp > 100)
 
-    // TODO - save aggregated to someplace else
+    hotSensors.print(1) // remove me if you want... this is just to spit out timestamps
 
-    println(s"WORDS: ${words} size: ${words.count()}")
-    // Map each word to a (word, 1) tuple so we can reduce by key to count the words
-    val wordCounts = words.map(word => (word, 1)).reduceByKey(_ + _)
+    println(s"Sensors with Temp > 100")
+    hotSensors.map { sd =>
+      println(s"Sensor id ${sd.id} has temp of ${sd.currentTemp}")
+    }
 
-    // TODO - add windowing?  sensor's highest value over the past 10 min?
+    // Hotest sensors over the last 20 seconds
+    hotSensors.window(Seconds(20)).foreachRDD { rdd =>
+      val spark = SparkSession.builder.config(rdd.sparkContext.getConf).getOrCreate()
+      import spark.implicits._
 
-    // Print the first 10 wordCounts
-    wordCounts.print()
+      val hotSensorDF = rdd.toDF()
+      hotSensorDF.createOrReplaceTempView("hot_sensors")
 
-    // Start the streaming context and await termination
+      val hottestOverTime = spark.sql("select * from hot_sensors order by currentTemp desc limit 5")
+      hottestOverTime.show(2)
+    }
+
+    // To make sure data is not deleted by the time we query it interactively
+    ssc.remember(Minutes(1))
+
     ssc.start()
     ssc.awaitTermination()
   }
 }
-case class SensorData(id: String, currentTemp: String, status: String)
+case class SensorData(id: String, currentTemp: Int, status: String)
