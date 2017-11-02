@@ -7,7 +7,7 @@ Add new ones too
 ### Kinesis example
 Run `SparkKinesisExample` with arguments; i.e
 
-com.supergloo.SparkKinesisExample KinesisApp wm https://kinesis.us-east-1.amazonaws.com
+com.supergloo.kinesis.SparkKinesisExample KinesisApp wm https://kinesis.us-east-1.amazonaws.com
 
 Run/Debug Configuration Screenshot from IntelliJ Example
 
@@ -15,9 +15,9 @@ Run/Debug Configuration Screenshot from IntelliJ Example
 
 Running via `spark-submit` example
 
-`spark-submit --class com.supergloo.SparkKinesisExample ./target/scala-2.11/spark-2-streaming-assembly-1.0.jar KinesisApp wm https://kinesis.us-east-1.amazonaws.com`
+`spark-submit --class com.supergloo.kinesis.SparkKinesisExample ./target/scala-2.11/spark-2-streaming-assembly-1.0.jar KinesisApp wm https://kinesis.us-east-1.amazonaws.com`
 
 In DSE 5.1.3 and above `spark-submit` example
 
-`dse --framework spark-2.0 spark-submit --class com.supergloo.SparkKinesisExample ./target/scala-2.11/spark-2-streaming-assembly-1.0.jar KinesisApp wm https://kinesis.us-east-1.amazonaws.com`
+`dse --framework spark-2.0 spark-submit --class com.supergloo.kinesis.SparkKinesisExample ./target/scala-2.11/spark-2-streaming-assembly-1.0.jar KinesisApp wm https://kinesis.us-east-1.amazonaws.com`
 

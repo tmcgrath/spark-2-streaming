@@ -34,13 +34,17 @@ lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-sql" % sparkVersion,
   "org.apache.spark" %% "spark-hive" % sparkVersion,
+  "org.apache.spark" %% "spark-mllib" % sparkVersion,
+  "org.apache.spark" %% "spark-streaming" % sparkVersion,
   "com.datastax.spark" %% "spark-cassandra-connector" % connectorVersion // assumes running in DSE; move to `otherDependencies` if OSS
 )
 
 lazy val otherDependencies = Seq(
   "com.typesafe" % "config" % "1.3.1",
   "mysql" % "mysql-connector-java" % "5.1.12",
-  "org.apache.spark" %% "spark-streaming-kinesis-asl" % sparkVersion
+  "org.apache.spark" %% "spark-streaming-kinesis-asl" % sparkVersion,
+  "org.scalaj" %% "scalaj-http" % "2.3.0",
+  "org.jfarcand" % "wcs" % "1.5"
 )
 
 libraryDependencies ++= sparkDependencies.map(_ % "provided") ++ otherDependencies // for assembly plugin - see project/assembly.sbt
