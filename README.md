@@ -1,7 +1,8 @@
 ## WIP
 
-Update old Streaming examples to Spark 2
+Update of old Streaming examples to Spark 2
 Add new ones too
+[Spark Streaming tutorials](https://supergloo.com/spark-streaming/)
 
 
 ### Kinesis example
